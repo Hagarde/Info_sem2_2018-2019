@@ -13,7 +13,7 @@
 # (NB: Si vous etes sous Mac, c'est Pomme-Shift-E qu'il faut utiliser)
 # ***************************************************************************
 
-
+import numpy as np
 # On importe la batterie de tests uniquement a l'execution du fichier et non 
 # lors de l'import en tant que module:
 # **NB**: Ne PAS commenter cette ligne car c'est elle qui charge le fichier de test...
@@ -26,29 +26,56 @@ if __name__ == '__main__': import test_TP11 as testeur
 def force2(m1,p1,m2,p2):
     """ Calcule la force gravitationnelle que la particule 2 exerce sur la 
     particule 1. """
-    return []
+    p2 , p1= np.array(p2), np.array(p1)
+    OM = p2-p1
+    AB = (OM[0]**2 + OM[1]**2 + OM[2]**2)**0.5
+
+    F = (m1*m2)/((AB)**2)
+    #Cette force est scalaire et on veut son expression dasn R3
+    return ((m1*m2)/AB**3)*OM
 
 # Ligne suivante a decommenter pour tester 
-#if __name__ == '__main__': testeur.fais_tests('01_force2')
+if __name__ == '__main__': testeur.fais_tests('01_force2')
 
 def forceN(j,m,pos):
     """ Calcule la force gravitationnelle totale que les N-1 autres particules 
     exercent sur la particule j. """
-    return []
+    mj = m[j]
+    pj=pos[j]
+    somme = [0,0,0]
+    for i in range (len(m)):
+        if i == j : continue 
+        else : 
+            pi = pos[i]
+            mi =m[i]
+            Fi = force2(mj,pj,mi,pi)
+            somme += Fi
+    return somme
 
 # Ligne suivante a decommenter pour tester 
-#if __name__ == '__main__': testeur.fais_tests('02_forceN')
+if __name__ == '__main__': testeur.fais_tests('02_forceN')
 
 def etats_suivants_euler(m,pos,vit,dt):
     """ Doit renvoyer les listes des positions et vitesses suivantes de chaque 
     particule (dans le meme ordre) apres un pas dt d'integration. Attention a 
     la complexite de votre algorithme si vous voulez obtenir tous les 
     points."""
+    ma = m[:]
+    p = pos[:]
+    v =vit[:]
+    
     N = len(pos)
     new_pos = [[0,0,0] for i in range(N)] # On fournit gracieusement l'initialisation
     new_vit = [[0,0,0] for i in range(N)] # On fournit gracieusement l'initialisation
+    
+    
+    
+    
+    
+    
+    
 
-#if __name__ == '__main__': testeur.fais_tests('03_etats_suivants_euler')
+if __name__ == '__main__': testeur.fais_tests('03_etats_suivants_euler')
 
 def positions_suivantes_verlet(m,pos,vit,dt):
     """ Doit renvoyer la liste des positions suivantes de chaque particule 
