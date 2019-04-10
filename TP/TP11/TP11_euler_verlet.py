@@ -13,7 +13,7 @@
 # (NB: Si vous etes sous Mac, c'est Pomme-Shift-E qu'il faut utiliser)
 # ***************************************************************************
 
-
+import numpy as np
 # On importe la batterie de tests uniquement a l'execution du fichier et non 
 # lors de l'import en tant que module:
 # **NB**: Ne PAS commenter cette ligne car c'est elle qui charge le fichier de test...
@@ -24,53 +24,63 @@ if __name__ == '__main__': import test_TP11 as testeur
 # ***************************************************************************
 
 def force2(m1,p1,m2,p2):
-    """ Calcule la force gravitationnelle que la particule 2 exerce sur la
+    """ Calcule la force gravitationnelle que la particule 2 exerce sur la 
     particule 1. """
-    f = [0]*3
-    r2 = 0
-    for i in range(3):
-        r2 = r2 + (p1[i]-p2[i])**2
-    r = r2**0.5
-    for i in range(3):
-        f[i] = -m1*m2 / r**3 * (p1[i]-p2[i])
-    return f
+    p2 , p1= np.array(p2), np.array(p1)
+    OM = p2-p1
+    AB = (OM[0]**2 + OM[1]**2 + OM[2]**2)**0.5
+
+    F = (m1*m2)/((AB)**2)
+    #Cette force est scalaire et on veut son expression dasn R3
+    return list(((m1*m2)/AB**3)*OM)
 
 # Ligne suivante a decommenter pour tester 
-#if __name__ == '__main__': testeur.fais_tests('01_force2')
+if __name__ == '__main__': testeur.fais_tests('01_force2')
 
 def forceN(j,m,pos):
-    """ Calcule la force gravitationnelle totale que les N-1 autres particules
+    """ Calcule la force gravitationnelle totale que les N-1 autres particules 
     exercent sur la particule j. """
     mj = m[j]
-    pj = pos[j]
-    F = [0]*3
-    for i in range(len(pos)):
-        if i != j :
-            f = force2(mj,pj,m[i],pos[i])
-            for k in range(3):
-                F[k] += f[k]
-    return F
+    pj=pos[j]
+    somme = [0,0,0]
+    for i in range (len(m)):
+        if i == j : continue 
+        else : 
+            pi = pos[i]
+            mi =m[i]
+            Fi = np.array(force2(mj,pj,mi,pi))
+            somme += Fi
+    return list(somme)
 
 # Ligne suivante a decommenter pour tester 
-#if __name__ == '__main__': testeur.fais_tests('02_forceN')
+if __name__ == '__main__': testeur.fais_tests('02_forceN')
+
+
+def f(j,m,pos) : 
+    a = np.array(forceN(j,m,pos))
+
+    return a/m[j]
+    
 
 def etats_suivants_euler(m,pos,vit,dt):
+    N = len(pos)
     """ Doit renvoyer les listes des positions et vitesses suivantes de chaque 
     particule (dans le meme ordre) apres un pas dt d'integration. Attention a 
     la complexite de votre algorithme si vous voulez obtenir tous les 
     points."""
-    N = len(pos)
-    new_pos = [[0,0,0] for i in range(N)] # On fournit gracieusement l'initialisation
-    new_vit = [[0,0,0] for i in range(N)] # On fournit gracieusement l'initialisation
-    for i in range(N):   #boucle sur le nombre de particules
-         force=forceN(i,m,pos)
-         for j in range(3): #boucle sur les coordonnées
-            new_pos[i][j]=pos[i][j]+dt*vit[i][j]
-            new_vit[i][j]=vit[i][j]+dt*force[j]/m[i]
+    acc = []
+    for i in range (N):
+        acc.append(f(i,m,pos))
+    acc = np.array(acc)
+    m = np.array([m])
+    pos = np.array([pos])
+    vit = np.array([vit])
+    new_pos = pos + vit*dt
+    new_vit = vit + acc*dt
 
-    return(new_pos,new_vit)
+    return new_pos , new_vit 
 
-if __name__ == '__main__': testeur.fais_tests('03_etats_suivants_euler_court') 
+if __name__ == '__main__': testeur.fais_tests('03_etats_suivants_euler_court')
 #if __name__ == '__main__': testeur.fais_tests('04_etats_suivants_euler_long')
 
 def positions_suivantes_verlet(m,pos,vit,dt):
@@ -78,10 +88,12 @@ def positions_suivantes_verlet(m,pos,vit,dt):
     (dans le meme ordre) apres un pas dt d'integration. """
     N = len(pos)
     new_pos = [[0,0,0] for i in range(N)] # On fournit gracieusement l'initialisation
+    for i in range (N) :
+        new_pos[i] = np.array(pos[i]) +np.array(vit[i])*dt + ((dt**2)/2) * f(i,m,pos)
     return new_pos
 
 # Ligne suivante a decommenter pour tester 
-#if __name__ == '__main__': testeur.fais_tests('05_positions_suivantes_verlet_court') 
+if __name__ == '__main__': testeur.fais_tests('05_positions_suivantes_verlet_court')
 #if __name__ == '__main__': testeur.fais_tests('06_positions_suivantes_verlet_long')
 
 def etats_suivants_verlet(m,pos,vit,dt):
@@ -89,10 +101,16 @@ def etats_suivants_verlet(m,pos,vit,dt):
     particule (dans le meme ordre) apres un pas dt d'integration. Attention a 
     la complexite de votre algorithme si vous voulez obtenir tous les 
     points."""
-    return [[]],[[]]
+    N = len(pos)
+    new_pos = [[0,0,0] for i in range(N)] # On fournit gracieusement l'initialisation
+    new_vit = [[0,0,0] for i in range(N)] # On fournit gracieusement l'initialisation
+    for i in range (N-1) :
+        new_pos[i] = np.array(pos[i]) +np.array(vit[i])*dt + ((dt**2)/2) * f(i,m,pos)
+        new_vit[i] = np.array (vit[i]) + ((np.array(f(i,m,pos))+np.array(f(i+1,m,pos)))/2)*dt
+    return new_pos , new_vit
 
 # Ligne suivante a decommenter pour tester 
-#if __name__ == '__main__': testeur.fais_tests('07_etats_suivants_verlet_court') 
+if __name__ == '__main__': testeur.fais_tests('07_etats_suivants_verlet_court')
 #if __name__ == '__main__': testeur.fais_tests('08_etats_suivants_verlet_long')
 
 
